@@ -3,6 +3,8 @@ The OperaMasks SDK ELite scripting engine contains classes that may be used to d
 
 You can download the dependencies required for the ELite scripting engine from the following link: https://sourceforge.net/projects/aom-elite, or it is already built into the OperaMasks SDK.
 Its jar package is named elite-src.jar or elite.jar + elite-api.jar
+It is worth noting that after importing elite-src.jar, you may still not be able to use the classes in it, even if you can see the required classes in it.
+If you want to reproduce stably, it is recommended to download elite-0.5.0.zip directly. In its elite-0.5.0\elite-0.5.0\lib directory, there are two jar packages we need, elite.jar and elite-api.jar.
 
 The following script is used to verify that it can be used for deserialization vulnerabilities：
 
