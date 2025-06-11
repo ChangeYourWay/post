@@ -358,7 +358,7 @@ public class basicThisObjectTest {
     }
 }
 
-
+This code shows the path from equals to any method. The path from readObject to equals can still refer to the previous HashTable class.
 
 After the script is executed, the calculator will pop up twice. The first execution is when the object is put into the hashtable for the second time. The second execution is when deserializing.
 This deserialization chain only uses classes in the Hashtable and ELite dependencies, indicating that any server that uses this dependency may be vulnerable to deserialization attacks.
