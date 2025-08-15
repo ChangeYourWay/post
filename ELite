@@ -472,8 +472,8 @@ public class basicThisObjectTest {
     }
 }
 
-After executing this program, the Runtime class's exec method can be called, but the parameters cannot be directly controlled. This method can be used to call any method of any class on the server, but the parameters still cannot be controlled.
+After executing this program, the Runtime class's exec method can be called, but the parameters cannot be directly controlled. This method allows you to call any method of any class on the server, but the parameters still cannot be controlled.
 
-Assuming the remote server includes this OperaMasks SDK ELite dependency and exposes a deserialization interface, an attacker can exploit this vulnerability to gain limited remote code execution.
+Assuming the remote server includes the OperaMasks SDK ELite dependency and exposes a deserialization interface, an attacker can exploit this vulnerability to gain limited remote code execution.
 
-Assuming the command execution logic in a method on the server does not rely on its parameters but only on the class's properties, this can lead to remote server privileges.
+Assuming the command execution logic in a method on the server does not rely on its parameters but only on the class's properties, this can allow an attacker to gain server privileges.
